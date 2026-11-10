@@ -1,0 +1,43 @@
+{
+  "template": "https://github.com/backofficedev/cookiecutter_chartbook",
+  "commit": "9eebbda0b314cc9d95065cfd70904898a5f5731c",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "shen_xiu_2024",
+      "project_slug": "shen_xiu_2024",
+      "project_description": "Replication and extension of Shen and Xiu (2024), Can Machines Learn Weak Signals? Ridge vs Lasso under weak signals: Monte Carlo (Figure 5) and the market equity premium (Table 2, Finance 1), with predictors rebuilt from Shiller, FRED, and CRSP and reconciled against Goyal's posted data.",
+      "author_name": "Fernando Perez-Millan, Emilio Diaz, Alexander Cruz, Gonzalo Romero",
+      "author_email": "gromerod@uchicago.edu",
+      "python_version": "3.12",
+      "environment_manager": "conda",
+      "include_latex_reports": "True",
+      "include_jupyter_notebooks": "True",
+      "include_r_scripts": "False",
+      "include_stata_scripts": "False",
+      "include_chartbook": "True",
+      "include_github_actions": "True",
+      "include_fred": "True",
+      "include_fed_yield_curve": "False",
+      "include_ofr_api": "False",
+      "include_bloomberg": "False",
+      "include_crsp_stock": "True",
+      "include_crsp_compustat": "False",
+      "_copy_without_render": [
+        "*.bst",
+        "*.sty",
+        "*.eps",
+        "*.ipe",
+        "*.png",
+        "*.pdf",
+        "*.tex",
+        "*.bib",
+        ".github/workflows/*.yml",
+        ".claude/skills/*/*.md"
+      ],
+      "_template": "https://github.com/backofficedev/cookiecutter_chartbook",
+      "_commit": "9eebbda0b314cc9d95065cfd70904898a5f5731c"
+    }
+  },
+  "directory": null
+}
