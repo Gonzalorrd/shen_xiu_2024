@@ -16,6 +16,8 @@ import shutil
 from os import environ
 from pathlib import Path
 
+from doit.tools import config_changed
+
 from settings import config
 
 DOIT_CONFIG = {"backend": "sqlite3", "dep_file": "./.doit-db.sqlite"}
@@ -151,6 +153,7 @@ def task_pull():
 ###############################################################
 
 GOYAL_FREQUENCIES = ["monthly", "quarterly", "annual"]
+PANEL_FREQUENCIES = ["monthly", "quarterly", "semiannual", "annual"]
 
 
 def task_pull_goyal():
@@ -166,6 +169,33 @@ def task_pull_goyal():
             DATA_DIR / "goyal_predictor_data.xlsx",
             DATA_DIR / "goyal_predictor_data_vintage.json",
             *[DATA_DIR / f"goyal_{freq}.parquet" for freq in GOYAL_FREQUENCIES],
+        ],
+        "clean": True,
+    }
+
+
+def task_build_panel_G():
+    """Build Panel G (Goyal's data) at every frequency, plus the Finance 1 panel.
+
+    The panels are cut to [START_DATE, END_DATE], so the task reruns when
+    settings.py changes or when either date changes through .env or an
+    environment variable. The build refuses to write a panel that breaks the
+    contract (gaps or missing values), e.g. if START_DATE is before 1947.
+    """
+    sample = {"START_DATE": str(config("START_DATE")), "END_DATE": str(config("END_DATE"))}
+    return {
+        "actions": ["python ./src/build_predictors.py"],
+        "uptodate": [config_changed(sample)],
+        "file_dep": [
+            "./src/settings.py",
+            "./src/pull_goyal.py",
+            "./src/aggregate.py",
+            "./src/build_predictors.py",
+            *[DATA_DIR / f"goyal_{freq}.parquet" for freq in GOYAL_FREQUENCIES],
+        ],
+        "targets": [
+            *[DATA_DIR / f"panel_G_{freq}.parquet" for freq in PANEL_FREQUENCIES],
+            DATA_DIR / "finance1_panel_G.parquet",
         ],
         "clean": True,
     }
