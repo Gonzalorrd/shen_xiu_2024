@@ -138,6 +138,91 @@ date_col = "date"
 docs_path = "./docs_src/dataframes/predictor_panels.md"
 
 
+[dataframes.panel_R_monthly]
+name = "Predictor Panel R, Monthly"
+description = "The 14 monthly predictors and the equity premium rebuilt from primary sources (CRSP, FRED, Shiller), with b/m and dfr from Goyal (Panel R)."
+sources = ["CRSP (WRDS)", "FRED", "Robert Shiller, ie_data.xls", "Amit Goyal (b/m, eqis, dfr)"]
+providers = ["Wharton Research Data Services", "Federal Reserve Bank of St. Louis", "Robert Shiller", "Amit Goyal"]
+provider_links = ["https://wrds-www.wharton.upenn.edu/", "https://fred.stlouisfed.org/", "https://shillerdata.com/", "https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["WRDS subscription", "Public", "Public", "Public"]
+license = "Yes"
+contact_required = "No"
+restrictions = "CRSP data are licensed through WRDS; do not redistribute."
+pull_method = "WRDS SQL and web download via Python"
+path = "./_data/panel_R_monthly.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
+[dataframes.panel_R_quarterly]
+name = "Predictor Panel R, Quarterly"
+description = "Panel R at quarterly frequency, aggregated from the rebuilt monthly inputs (k = 3)."
+sources = ["CRSP (WRDS)", "FRED", "Robert Shiller, ie_data.xls", "Amit Goyal (b/m, eqis, dfr)"]
+providers = ["Wharton Research Data Services", "Federal Reserve Bank of St. Louis", "Robert Shiller", "Amit Goyal"]
+provider_links = ["https://wrds-www.wharton.upenn.edu/", "https://fred.stlouisfed.org/", "https://shillerdata.com/", "https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["WRDS subscription", "Public", "Public", "Public"]
+license = "Yes"
+contact_required = "No"
+restrictions = "CRSP data are licensed through WRDS; do not redistribute."
+pull_method = "WRDS SQL and web download via Python"
+path = "./_data/panel_R_quarterly.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
+[dataframes.panel_R_semiannual]
+name = "Predictor Panel R, Semi-annual"
+description = "Panel R at semi-annual frequency, aggregated from the rebuilt monthly inputs (k = 6)."
+sources = ["CRSP (WRDS)", "FRED", "Robert Shiller, ie_data.xls", "Amit Goyal (b/m, eqis, dfr)"]
+providers = ["Wharton Research Data Services", "Federal Reserve Bank of St. Louis", "Robert Shiller", "Amit Goyal"]
+provider_links = ["https://wrds-www.wharton.upenn.edu/", "https://fred.stlouisfed.org/", "https://shillerdata.com/", "https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["WRDS subscription", "Public", "Public", "Public"]
+license = "Yes"
+contact_required = "No"
+restrictions = "CRSP data are licensed through WRDS; do not redistribute."
+pull_method = "WRDS SQL and web download via Python"
+path = "./_data/panel_R_semiannual.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
+[dataframes.panel_R_annual]
+name = "Predictor Panel R, Annual (aggregated)"
+description = "Panel R at annual frequency, aggregated from the rebuilt monthly inputs (k = 12)."
+sources = ["CRSP (WRDS)", "FRED", "Robert Shiller, ie_data.xls", "Amit Goyal (b/m, eqis, dfr)"]
+providers = ["Wharton Research Data Services", "Federal Reserve Bank of St. Louis", "Robert Shiller", "Amit Goyal"]
+provider_links = ["https://wrds-www.wharton.upenn.edu/", "https://fred.stlouisfed.org/", "https://shillerdata.com/", "https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["WRDS subscription", "Public", "Public", "Public"]
+license = "Yes"
+contact_required = "No"
+restrictions = "CRSP data are licensed through WRDS; do not redistribute."
+pull_method = "WRDS SQL and web download via Python"
+path = "./_data/panel_R_annual.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
+[dataframes.finance1_panel_R]
+name = "Finance 1 Panel R (annual, 16 predictors)"
+description = "All 16 Finance 1 predictors rebuilt from primary sources, with b/m, eqis and dfr from Goyal: the input for the update."
+sources = ["CRSP (WRDS)", "FRED", "Robert Shiller, ie_data.xls", "Amit Goyal (b/m, eqis, dfr)"]
+providers = ["Wharton Research Data Services", "Federal Reserve Bank of St. Louis", "Robert Shiller", "Amit Goyal"]
+provider_links = ["https://wrds-www.wharton.upenn.edu/", "https://fred.stlouisfed.org/", "https://shillerdata.com/", "https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["WRDS subscription", "Public", "Public", "Public"]
+license = "Yes"
+contact_required = "No"
+restrictions = "CRSP data are licensed through WRDS; do not redistribute."
+pull_method = "WRDS SQL and web download via Python"
+path = "./_data/finance1_panel_R.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
 [charts]
 
 

@@ -155,6 +155,29 @@ def test_compute_predictors_rejects_an_index_with_gaps():
         bp.compute_predictors(gappy)
 
 
+def test_panel_r_takes_goyal_sourced_columns_from_panel_g():
+    """b/m and dfr in Panel R are Panel G's values; other columns are untouched."""
+    index = pd.DatetimeIndex(["2000-12-31", "2001-12-31"], name="date")
+    panel_r = pd.DataFrame(
+        {"b/m": [9.0, 9.0], "dfr": [9.0, 9.0], "tbl": [0.05, 0.02]}, index
+    )
+    panel_g = pd.DataFrame(
+        {"b/m": [0.3, 0.4], "dfr": [0.01, -0.01], "tbl": [0.0, 0.0]}, index
+    )
+    out = bp.replace_with_goyal_sourced(panel_r, panel_g, ["b/m", "dfr"])
+    assert out["b/m"].tolist() == [0.3, 0.4]
+    assert out["dfr"].tolist() == [0.01, -0.01]
+    assert out["tbl"].tolist() == [0.05, 0.02]
+
+
+def test_panel_r_and_g_must_cover_the_same_dates():
+    """Copying across panels with different dates would misalign the Goyal columns."""
+    panel_r = pd.DataFrame({"b/m": [1.0]}, index=pd.DatetimeIndex(["2000-12-31"]))
+    panel_g = pd.DataFrame({"b/m": [1.0]}, index=pd.DatetimeIndex(["2001-12-31"]))
+    with pytest.raises(ValueError):
+        bp.replace_with_goyal_sourced(panel_r, panel_g, ["b/m"])
+
+
 def test_contract_lists_are_consistent():
     """14 monthly predictors, 16 for Finance 1, and every Goyal-sourced series is a predictor."""
     assert len(bp.MONTHLY_PREDICTORS) == 14

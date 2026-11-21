@@ -3,7 +3,10 @@
 These panels hold the Welch-Goyal predictors of the US equity premium, used by
 the Shen and Xiu (2024) Finance 1 replication and by our frequency extension.
 Panel G is built from Amit Goyal's posted workbook. Panel R, with the same
-layout, is rebuilt from primary sources (CRSP, FRED, Shiller) and is added later.
+layout, is rebuilt from primary sources (CRSP, FRED, Shiller), except b/m, eqis
+and dfr, which are copied from Panel G. lty, ltr and ik in Panel R are close
+proxies, not exact rebuilds. Panel R files carry CRSP data and must not be
+redistributed.
 
 - `panel_G_{monthly, quarterly, semiannual, annual}`: 14 predictors plus targets.
   The coarser frequencies are aggregated from the monthly data with one set of
