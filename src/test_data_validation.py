@@ -63,12 +63,21 @@ RECONCILIATION_CORR_MIN = {
     "ltr": CORR_MIN_PROXY,
     "tms": CORR_MIN_PROXY,
 }
-# ik exists only at quarterly/annual frequency; checked on the Finance 1 panel.
+# ik exists only at quarterly/annual frequency; checked at annual frequency.
 RECONCILIATION_CORR_MIN_ANNUAL_ONLY = {"ik": CORR_MIN_PROXY}
 
 # Taken from Goyal in both panels, so they must be identical, not merely close.
 GOYAL_SOURCED_MONTHLY = ["b/m", "dfr"]
-GOYAL_SOURCED_ANNUAL = ["b/m", "eqis", "dfr"]
+# ik was ADDED HERE ON 2026-11-21, AFTER its proxy failed the 0.95 threshold
+# above (corr 0.927). Welch and Goyal (2008): "John Cochrane kindly provided us
+# with updated data"; the capital construction is not documented. The threshold
+# was not changed, and the failing proxy test below is kept as a strict xfail.
+GOYAL_SOURCED_ANNUAL = ["b/m", "eqis", "dfr", "ik"]
+IK_PROXY_FAILURE = (
+    "Post-hoc (2026-11-21): the BEA-based ik proxy correlates 0.927 with Goyal's "
+    "ik (< 0.95), whose source is data supplied by John Cochrane; Panel R uses "
+    "Goyal's ik instead. Reported in Table C1."
+)
 
 ## 2. Identities hold to floating-point precision.
 IDENTITY_ATOL = 1e-10
@@ -148,20 +157,35 @@ def test_rebuilt_series_reconcile_with_goyal_monthly(series, corr_min):
     assert corr >= corr_min, f"{series}: corr {corr:.4f} < {corr_min}"
 
 
-@pytest.mark.parametrize("series,corr_min", RECONCILIATION_CORR_MIN_ANNUAL_ONLY.items())
+@pytest.mark.parametrize(
+    "series,corr_min",
+    [
+        pytest.param(
+            "ik",
+            RECONCILIATION_CORR_MIN_ANNUAL_ONLY["ik"],
+            marks=pytest.mark.xfail(strict=True, reason=IK_PROXY_FAILURE),
+        )
+    ],
+)
 def test_rebuilt_series_reconcile_with_goyal_annual(series, corr_min):
-    """Series that exist only at annual frequency reconcile on the Finance 1 panel."""
+    """The annual-only proxy (ik, from BEA data) reconciles with Goyal's annual ik.
+
+    Panel R now carries Goyal's ik, so the proxy is rebuilt here from the FRED
+    pulls rather than read from the panel.
+    """
+    rebuild_inputs = pytest.importorskip("rebuild_inputs")
     panel_g = _read_parquet_or_skip("finance1_panel_G.parquet")
-    panel_r = _read_parquet_or_skip("finance1_panel_R.parquet")
-    both = pd.concat([panel_r[series], panel_g[series]], axis=1, keys=["R", "G"])
-    both = both.dropna()
+    _read_parquet_or_skip("fred_quarterly.parquet")
+    _read_parquet_or_skip("fred_annual.parquet")
+    proxy = rebuild_inputs.build_rebuilt_annual_ik(DATA_DIR)
+    both = pd.concat([proxy, panel_g[series]], axis=1, keys=["R", "G"]).dropna()
     assert len(both) > 0, f"No overlapping observations for {series}"
     corr = both["R"].corr(both["G"])
     assert corr >= corr_min, f"{series}: corr {corr:.4f} < {corr_min}"
 
 
 def test_goyal_sourced_series_identical_in_both_panels():
-    """b/m, eqis and dfr come from Goyal in Panel R too, so they match exactly."""
+    """b/m, eqis, dfr and ik come from Goyal in Panel R too, so they match exactly."""
     monthly_g = _read_parquet_or_skip("panel_G_monthly.parquet")
     monthly_r = _read_parquet_or_skip("panel_R_monthly.parquet")
     pd.testing.assert_frame_equal(

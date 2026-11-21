@@ -258,6 +258,35 @@ def task_pull_crsp():
     }
 
 
+def task_build_panel_R():
+    """Build Panel R (rebuilt from CRSP, FRED, Shiller) at every frequency, plus Finance 1.
+
+    b/m, eqis and dfr are copied from Panel G, so Panel G is a dependency.
+    """
+    sample = {"START_DATE": str(config("START_DATE")), "END_DATE": str(config("END_DATE"))}
+    return {
+        "actions": ["python ./src/build_predictors.py R"],
+        "uptodate": [config_changed(sample)],
+        "file_dep": [
+            "./src/settings.py",
+            "./src/aggregate.py",
+            "./src/build_predictors.py",
+            "./src/rebuild_inputs.py",
+            *[DATA_DIR / f"{name}.parquet" for name in CRSP_FILES],
+            *[DATA_DIR / f"fred_{f}.parquet" for f in ["monthly", "quarterly", "annual"]],
+            DATA_DIR / "shiller.parquet",
+            DATA_DIR / "goyal_monthly.parquet",
+            *[DATA_DIR / f"panel_G_{freq}.parquet" for freq in PANEL_FREQUENCIES],
+            DATA_DIR / "finance1_panel_G.parquet",
+        ],
+        "targets": [
+            *[DATA_DIR / f"panel_R_{freq}.parquet" for freq in PANEL_FREQUENCIES],
+            DATA_DIR / "finance1_panel_R.parquet",
+        ],
+        "clean": True,
+    }
+
+
 def task_summary_stats():
     """Generate summary statistics tables"""
     file_dep = ["./src/example_table.py"]

@@ -16,10 +16,11 @@ Files (in DATA_DIR, built by ``doit``, never committed)
   plus eqis and ik) and the target columns. For Panel G it is built from Goyal's
   own Annual sheet, the authors' input for Table 2.
 
-Panel G is built from Goyal's posted workbook. Panel R (our rebuilt series,
-same file layout) is built by the same functions once the CRSP, FRED and
-Shiller pulls exist. Load with ``load_panel("G", "monthly")`` or
-``load_finance1_panel("G")``.
+Panel G is built from Goyal's posted workbook. Panel R has the same file
+layout and goes through the same aggregation and predictor code, starting
+from inputs rebuilt from CRSP, FRED and Shiller (``rebuild_inputs.py``); its
+b/m, eqis, dfr and ik are copied from Panel G. Load with
+``load_panel("G", "monthly")`` or ``load_finance1_panel("R")``.
 
 Index
 -----
@@ -58,9 +59,14 @@ Goyal posts only at annual (eqis) or quarterly and annual (ik) frequency.
 
 - d/p = log D12 - log P_t;  d/y = log D12 - log P_{t-1};  e/p = log E12 - log P_t;
   d/e = log D12 - log E12;  tms = lty - tbl;  dfy = BAA - AAA;  dfr = corpr - ltr.
-- ``GOYAL_SOURCED`` = b/m, eqis, dfr: their primary inputs are commercial or
-  discontinued (Appendix C.2), so they are taken from Goyal in BOTH panels and
-  are identical in G and R.
+- ``GOYAL_SOURCED`` = b/m, eqis, dfr, ik: taken from Goyal in BOTH panels, so
+  they are identical in G and R. b/m, eqis and dfr have commercial or
+  discontinued primary inputs (Appendix C.2). ik was added after the first
+  reconciliation (2026-11-21): Welch and Goyal (2008) say "John Cochrane kindly
+  provided us with updated data", and the capital construction behind it is
+  not documented. Our BEA-based proxy (rebuild_inputs.annual_ik) correlates
+  0.927 with Goyal's, below the pre-registered 0.95, and is kept only as a
+  reported diagnostic (Table C1).
 - infl is inflation during period t as Goyal posts it; ``infl_pit`` is the
   release-lagged version (see Timing). infl_pit is an extra column, not one of
   the 14 / 16 predictors.
@@ -81,6 +87,7 @@ Target columns
 - ``eq_prem_rfcomp``, ``eq_prem_log_rfcomp``: the same two with rf_comp.
 """
 
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -107,7 +114,7 @@ MONTHLY_PREDICTORS = [
     "tbl", "lty", "ltr", "tms", "dfy", "dfr", "infl",
 ]  # fmt: skip
 FINANCE1_PREDICTORS = MONTHLY_PREDICTORS + ["eqis", "ik"]
-GOYAL_SOURCED = ["b/m", "eqis", "dfr"]
+GOYAL_SOURCED = ["b/m", "eqis", "dfr", "ik"]
 TARGET = "eq_prem"
 TARGET_COLUMNS = [
     "ret", "retx", "rf", "rf_comp",
@@ -280,6 +287,63 @@ def build_panel_G(data_dir=DATA_DIR, start=START_DATE, end=END_DATE):
     return panels
 
 
+def replace_with_goyal_sourced(panel_r, panel_g, columns):
+    """Copy the Goyal-sourced columns from Panel G into Panel R (same dates required).
+
+    b/m, eqis, dfr and ik cannot be rebuilt from public sources, so Panel R
+    carries Goyal's values and the two panels are identical in these columns.
+    """
+    if not panel_r.index.equals(panel_g.index):
+        raise ValueError("Panels R and G must cover the same dates.")
+    out = panel_r.copy()
+    out[columns] = panel_g[columns]
+    return out
+
+
+def build_finance1_panel_rebuilt(
+    monthly_inputs, finance1_g, start=START_DATE, end=END_DATE
+):
+    """Annual Finance 1 panel R: aggregated rebuilt inputs + Goyal's b/m, eqis, dfr, ik.
+
+    rf follows Goyal's convention from our tbl; rf_comp compounds CRSP's T-bill returns.
+    """
+    inputs = aggregate_with_point_in_time_inflation(monthly_inputs, 12)
+    predictors = compute_predictors(inputs)[MONTHLY_PREDICTORS]
+    predictors["eqis"] = np.nan  # from Goyal below
+    predictors["ik"] = np.nan  # from Goyal below
+    targets = compute_targets(inputs, inputs["Rfree"], inputs["Rfree_comp"])
+    panel = pd.concat([predictors, targets, inputs[POINT_IN_TIME_COLUMNS]], axis=1)
+    panel = panel.loc[start:end]
+    panel.index.name = "date"
+    panel = replace_with_goyal_sourced(panel, finance1_g, GOYAL_SOURCED)
+    columns = FINANCE1_PREDICTORS + TARGET_COLUMNS + POINT_IN_TIME_COLUMNS
+    check_panel_contract(panel, 12, columns, start, end)
+    return panel[columns]
+
+
+def build_panel_R(data_dir=DATA_DIR, start=START_DATE, end=END_DATE):
+    """Build every Panel R file from the rebuilt inputs, with Goyal's b/m, eqis, dfr and ik.
+
+    Needs the Panel G files (for the Goyal-sourced columns) and the saved pulls.
+    Returns a dict {file name: DataFrame}.
+    """
+    import rebuild_inputs  # Panel G does not need the CRSP/FRED/Shiller pulls
+
+    monthly = rebuild_inputs.build_rebuilt_monthly_inputs(data_dir)
+    monthly_sourced = [c for c in GOYAL_SOURCED if c in MONTHLY_PREDICTORS]
+    panels = {}
+    for freq in FREQUENCIES:
+        panel_r = build_frequency_panel(monthly, freq, start, end)
+        panel_g = load_panel("G", freq, data_dir)
+        panels[panel_file_name("R", freq)] = replace_with_goyal_sourced(
+            panel_r, panel_g, monthly_sourced
+        )
+    panels[finance1_file_name("R")] = build_finance1_panel_rebuilt(
+        monthly, load_finance1_panel("G", data_dir), start, end
+    )
+    return panels
+
+
 def save_panels(panels, data_dir=DATA_DIR):
     """Write each panel to data_dir as parquet."""
     data_dir = Path(data_dir)
@@ -299,7 +363,9 @@ def load_finance1_panel(panel="G", data_dir=DATA_DIR):
 
 
 if __name__ == "__main__":
-    built = build_panel_G()
+    # `python build_predictors.py` builds Panel G; `python build_predictors.py R` builds Panel R.
+    which = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in PANELS else "G"
+    built = build_panel_G() if which == "G" else build_panel_R()
     save_panels(built)
     for name, df in built.items():
         print(f"{name}: {df.shape[0]} rows x {df.shape[1]} columns, "
