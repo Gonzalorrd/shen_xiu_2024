@@ -201,6 +201,23 @@ def task_build_panel_G():
     }
 
 
+def task_pull_fred_predictors():
+    """Pull the FRED series for the rebuilt predictors (no API key needed).
+
+    The pull window follows START_DATE/END_DATE, so it reruns when they change.
+    """
+    sample = {"START_DATE": str(config("START_DATE")), "END_DATE": str(config("END_DATE"))}
+    return {
+        "actions": ["python ./src/pull_fred_predictors.py"],
+        "uptodate": [config_changed(sample)],
+        "file_dep": ["./src/settings.py", "./src/pull_fred_predictors.py"],
+        "targets": [
+            DATA_DIR / f"fred_{freq}.parquet" for freq in ["monthly", "quarterly", "annual"]
+        ],
+        "clean": True,
+    }
+
+
 def task_summary_stats():
     """Generate summary statistics tables"""
     file_dep = ["./src/example_table.py"]
