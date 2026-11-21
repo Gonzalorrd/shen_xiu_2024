@@ -5,6 +5,7 @@ import pull_fred
 from settings import config
 
 DATA_DIR = config("DATA_DIR")
+START_DATE = config("START_DATE")
 
 
 def test_pull_fred_functionality():
@@ -25,7 +26,7 @@ def test_pull_fred_data_validity():
     df = pull_fred.pull_fred()
 
     # Test if the default date range has the expected start date and end date
-    assert df.index.min() == pd.Timestamp("1913-01-01")
+    assert df.index.min() == pd.Timestamp(START_DATE)
     assert df.index.max() >= pd.Timestamp("2023-09-01")
 
     # Test if the average annualized growth rate is close to 3.08%
