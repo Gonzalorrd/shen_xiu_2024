@@ -53,6 +53,91 @@ date_col = "date"
 docs_path = "./docs_src/dataframes/repo_public.md"
 
 
+[dataframes.panel_G_monthly]
+name = "Predictor Panel G, Monthly"
+description = "The 14 monthly Welch-Goyal predictors and the S&P 500 equity premium, built from Goyal's posted data (Panel G), 1947 to END_DATE."
+sources = ["Amit Goyal, Welch-Goyal predictor data (updated to 2025)"]
+providers = ["Amit Goyal"]
+provider_links = ["https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["Public"]
+license = "No"
+contact_required = "No"
+restrictions = "No"
+pull_method = "Web download via Python"
+path = "./_data/panel_G_monthly.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
+[dataframes.panel_G_quarterly]
+name = "Predictor Panel G, Quarterly"
+description = "The 14 predictors and the equity premium at quarterly frequency, aggregated from Goyal's monthly data (frequency-ladder rung, k = 3)."
+sources = ["Amit Goyal, Welch-Goyal predictor data (updated to 2025)"]
+providers = ["Amit Goyal"]
+provider_links = ["https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["Public"]
+license = "No"
+contact_required = "No"
+restrictions = "No"
+pull_method = "Web download via Python"
+path = "./_data/panel_G_quarterly.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
+[dataframes.panel_G_semiannual]
+name = "Predictor Panel G, Semi-annual"
+description = "The 14 predictors and the equity premium at semi-annual frequency, aggregated from Goyal's monthly data (k = 6). Goyal publishes no semi-annual sheet."
+sources = ["Amit Goyal, Welch-Goyal predictor data (updated to 2025)"]
+providers = ["Amit Goyal"]
+provider_links = ["https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["Public"]
+license = "No"
+contact_required = "No"
+restrictions = "No"
+pull_method = "Web download via Python"
+path = "./_data/panel_G_semiannual.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
+[dataframes.panel_G_annual]
+name = "Predictor Panel G, Annual (aggregated)"
+description = "The 14 predictors and the equity premium at annual frequency, aggregated from Goyal's monthly data (k = 12); the extension's annual rung."
+sources = ["Amit Goyal, Welch-Goyal predictor data (updated to 2025)"]
+providers = ["Amit Goyal"]
+provider_links = ["https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["Public"]
+license = "No"
+contact_required = "No"
+restrictions = "No"
+pull_method = "Web download via Python"
+path = "./_data/panel_G_annual.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
+[dataframes.finance1_panel_G]
+name = "Finance 1 Panel G (annual, 16 predictors)"
+description = "All 16 Finance 1 predictors and the equity premium from Goyal's own Annual sheet: the input for the Table 2 replication."
+sources = ["Amit Goyal, Welch-Goyal predictor data (updated to 2025)"]
+providers = ["Amit Goyal"]
+provider_links = ["https://sites.google.com/view/agoyal145"]
+tags = ["Equity Premium", "Return Predictability", "Welch-Goyal"]
+access_types = ["Public"]
+license = "No"
+contact_required = "No"
+restrictions = "No"
+pull_method = "Web download via Python"
+path = "./_data/finance1_panel_G.parquet"
+date_col = "date"
+docs_path = "./docs_src/dataframes/predictor_panels.md"
+
+
 [charts]
 
 
