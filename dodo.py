@@ -11,6 +11,7 @@ import sys
 
 sys.path.insert(1, "./src/")
 
+import getpass
 import shutil
 from os import environ
 from pathlib import Path
@@ -25,7 +26,8 @@ DATA_DIR = config("DATA_DIR")
 MANUAL_DATA_DIR = config("MANUAL_DATA_DIR")
 OUTPUT_DIR = config("OUTPUT_DIR")
 OS_TYPE = config("OS_TYPE")
-USER = config("USER")
+# Windows sets USERNAME, not USER; fall back to the login name.
+USER = config("USER", default=getpass.getuser(), cast=str)
 
 ## Helpers for handling Jupyter Notebook tasks
 environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"

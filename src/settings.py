@@ -148,8 +148,9 @@ else:
     defaults["STATA_EXE"] = get_stata_exe()
 
 ## Dates
-defaults["START_DATE"] = datetime.strptime("1913-01-01", "%Y-%m-%d")
-defaults["END_DATE"] = datetime.strptime("2024-12-31", "%Y-%m-%d")
+## Sample: 1947-01 through the last month every source covers (Appendix C.3).
+defaults["START_DATE"] = datetime.strptime("1947-01-01", "%Y-%m-%d")
+defaults["END_DATE"] = datetime.strptime("2025-12-31", "%Y-%m-%d")
 
 
 ## File paths
