@@ -146,6 +146,31 @@ def task_pull():
     }
 
 
+###############################################################
+## Data workstream: predictor panels (Appendix C, Part I)
+###############################################################
+
+GOYAL_FREQUENCIES = ["monthly", "quarterly", "annual"]
+
+
+def task_pull_goyal():
+    """Download and parse Goyal's predictor workbook (no credentials needed).
+
+    The workbook is pulled in full, so it does not depend on START_DATE/END_DATE
+    and changing the sample does not re-download it.
+    """
+    return {
+        "actions": ["python ./src/pull_goyal.py"],
+        "file_dep": ["./src/pull_goyal.py"],
+        "targets": [
+            DATA_DIR / "goyal_predictor_data.xlsx",
+            DATA_DIR / "goyal_predictor_data_vintage.json",
+            *[DATA_DIR / f"goyal_{freq}.parquet" for freq in GOYAL_FREQUENCIES],
+        ],
+        "clean": True,
+    }
+
+
 def task_summary_stats():
     """Generate summary statistics tables"""
     file_dep = ["./src/example_table.py"]
