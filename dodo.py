@@ -218,6 +218,23 @@ def task_pull_fred_predictors():
     }
 
 
+def task_pull_shiller():
+    """Pull Shiller's ie_data.xls (D and E for Panel R; P for the cross-check).
+
+    The whole file is pulled, so it does not depend on START_DATE/END_DATE.
+    """
+    return {
+        "actions": ["python ./src/pull_shiller.py"],
+        "file_dep": ["./src/pull_shiller.py", "./src/pull_goyal.py"],
+        "targets": [
+            DATA_DIR / "shiller_ie_data.xls",
+            DATA_DIR / "shiller_ie_data_vintage.json",
+            DATA_DIR / "shiller.parquet",
+        ],
+        "clean": True,
+    }
+
+
 def task_summary_stats():
     """Generate summary statistics tables"""
     file_dep = ["./src/example_table.py"]
