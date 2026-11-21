@@ -235,6 +235,29 @@ def task_pull_shiller():
     }
 
 
+CRSP_FILES = [
+    "crsp_sp500_monthly",
+    "crsp_sp500_daily",
+    "crsp_treasury_monthly",
+    "crsp_nyse_monthly",
+]
+
+
+def task_pull_crsp():
+    """Pull the CRSP index, Treasury and NYSE series from WRDS (needs WRDS_USERNAME).
+
+    The pull window follows START_DATE/END_DATE, so it reruns when they change.
+    """
+    sample = {"START_DATE": str(config("START_DATE")), "END_DATE": str(config("END_DATE"))}
+    return {
+        "actions": ["python ./src/pull_crsp.py"],
+        "uptodate": [config_changed(sample)],
+        "file_dep": ["./src/settings.py", "./src/pull_crsp.py"],
+        "targets": [DATA_DIR / f"{name}.parquet" for name in CRSP_FILES],
+        "clean": True,
+    }
+
+
 def task_summary_stats():
     """Generate summary statistics tables"""
     file_dep = ["./src/example_table.py"]
