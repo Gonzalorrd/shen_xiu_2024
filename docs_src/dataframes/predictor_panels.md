@@ -3,8 +3,8 @@
 These panels hold the Welch-Goyal predictors of the US equity premium, used by
 the Shen and Xiu (2024) Finance 1 replication and by our frequency extension.
 Panel G is built from Amit Goyal's posted workbook. Panel R, with the same
-layout, is rebuilt from primary sources (CRSP, FRED, Shiller), except b/m, eqis
-and dfr, which are copied from Panel G. lty, ltr and ik in Panel R are close
+layout, is rebuilt from primary sources (CRSP, FRED, Shiller), except b/m, eqis,
+dfr and ik, which are copied from Panel G. lty and ltr in Panel R are close
 proxies, not exact rebuilds. Panel R files carry CRSP data and must not be
 redistributed.
 
@@ -41,7 +41,7 @@ discontinued.
 - **infl**: `float64` CPI inflation over the period, as Goyal posts it. It is not yet published at the period end.
 - **infl_pit**: `float64` Point-in-time inflation: monthly CPI inflation lagged one month for its release, then compounded over the period. It is known at the period end, so use it for point-in-time forecasts.
 - **eqis**: `float64` Percent equity issuing (Finance 1 panel only; from Goyal).
-- **ik**: `float64` Investment-to-capital ratio (Finance 1 panel only).
+- **ik**: `float64` Investment-to-capital ratio (Finance 1 panel only; from Goyal, whose source is data supplied by John Cochrane).
 - **ret**: `float64` S&P 500 total return over the period (CRSP value-weighted, with dividends).
 - **retx**: `float64` S&P 500 return without dividends.
 - **rf**: `float64` Risk-free return over the period, Goyal's convention (start-of-quarter T-bill yield times 3/12, compounded across quarters).
