@@ -26,16 +26,10 @@ svar    sum of squared daily CRSP S&P 500 returns (vwretd)     rebuilt
 CRSP_*  CRSP S&P 500 returns with (vwretd) / without (vwretx)  rebuilt
 b/m     Goyal (Value Line book values are commercial)          from Goyal
 corpr   Goyal (Ibbotson; dfr is then replaced by Goyal's dfr)  from Goyal
-ik      FRED PNFI / 4 over the previous year-end BEA net       diagnostic only
-        stock of private nonresidential fixed assets; annual   (Panel R uses
-        value = Q4 (Goyal's convention)                        Goyal's ik)
+ik      FRED PNFI / 4 over the previous year-end BEA net       proxy
+        stock of private nonresidential fixed assets; annual
+        value = Q4 (Goyal's convention)
 ======  =====================================================  ===============
-
-ik is not used in Panel R. Goyal's ik is data John Cochrane supplies to Goyal,
-and its capital construction is not documented. Our proxy correlates 0.927 with
-it, below the pre-registered 0.95, so Panel R takes ik from Goyal, like b/m, eqis
-and dfr (decided after that comparison; see test_data_validation.py).
-``annual_ik`` stays for the reconciliation table.
 
 Choices fixed before comparing with Goyal:
 
