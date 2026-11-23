@@ -82,9 +82,16 @@ Target columns
 - ``retx``: S&P 500 return without dividends;
 - ``rf``: risk-free return over the period, in Goyal's convention (see aggregate.py);
 - ``rf_comp``: compounded monthly risk-free return (equal to rf at monthly frequency);
-- ``eq_prem`` = ret - rf: the pre-registered target y_t (``TARGET``);
-- ``eq_prem_log`` = log(1 + ret) - log(1 + rf): the log-premium robustness row;
+- ``eq_prem`` = ret - rf (simple premium);
+- ``eq_prem_log`` = log(1 + ret) - log(1 + rf) (log premium);
 - ``eq_prem_rfcomp``, ``eq_prem_log_rfcomp``: the same two with rf_comp.
+
+``TARGET`` is ``eq_prem_log_rfcomp``: the log S&P 500 return minus the log
+compounded 1-month T-bill return (Appendix B.2, C.2). Appendix B.8 pre-registered
+the simple premium but left the OLS anchor (B.6(1)) to decide; on Panel G the
+simple premium gives R2oos -94.86 and the log premium -82.67, against the paper's
+-81.08 +/- 2 (test_build_predictors.py). Because it is a log return on compounded
+rf, the k-month target is the sum of the k monthly targets.
 """
 
 import sys
@@ -115,7 +122,7 @@ MONTHLY_PREDICTORS = [
 ]  # fmt: skip
 FINANCE1_PREDICTORS = MONTHLY_PREDICTORS + ["eqis", "ik"]
 GOYAL_SOURCED = ["b/m", "eqis", "dfr", "ik"]
-TARGET = "eq_prem"
+TARGET = "eq_prem_log_rfcomp"  # chosen by the OLS anchor; see docstring
 TARGET_COLUMNS = [
     "ret", "retx", "rf", "rf_comp",
     "eq_prem", "eq_prem_log", "eq_prem_rfcomp", "eq_prem_log_rfcomp",

@@ -46,7 +46,7 @@ discontinued.
 - **retx**: `float64` S&P 500 return without dividends.
 - **rf**: `float64` Risk-free return over the period, Goyal's convention (start-of-quarter T-bill yield times 3/12, compounded across quarters).
 - **rf_comp**: `float64` Compounded monthly risk-free return.
-- **eq_prem**: `float64` Equity premium, ret - rf: the pre-registered target.
+- **eq_prem**: `float64` Equity premium, ret - rf. Appendix B.8 pre-registered this simple premium, but it misses the OLS anchor (R2oos -94.86 vs. the paper's -81.08), so it is not the target.
 - **eq_prem_log**: `float64` Log equity premium, log(1 + ret) - log(1 + rf).
 - **eq_prem_rfcomp**: `float64` ret - rf_comp.
-- **eq_prem_log_rfcomp**: `float64` log(1 + ret) - log(1 + rf_comp).
+- **eq_prem_log_rfcomp**: `float64` log(1 + ret) - log(1 + rf_comp): **the target y_t** (`TARGET`). It is the log S&P 500 return minus the log compounded 1-month T-bill return (Appendix B.2, C.2), passes the OLS anchor (R2oos -82.67), and at k months equals the sum of the k monthly values, which the extension needs.

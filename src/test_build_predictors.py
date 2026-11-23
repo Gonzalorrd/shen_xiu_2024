@@ -184,3 +184,94 @@ def test_contract_lists_are_consistent():
     assert len(bp.FINANCE1_PREDICTORS) == 16
     assert set(bp.GOYAL_SOURCED) <= set(bp.FINANCE1_PREDICTORS)
     assert bp.TARGET in bp.TARGET_COLUMNS
+
+
+###############################################################################
+## Target choice (Appendix B.8): the OLS anchor decides simple vs. log premium
+###############################################################################
+
+## Appendix B.6(1): OLS on Panel G must give the paper's Finance 1 R2oos to
+## within 2 percentage points. B.8 leaves simple vs. log premium open and says
+## this anchor reveals which one the authors used, so it is a test of TARGET.
+PAPER_OLS_R2OOS = -81.08
+OLS_ANCHOR_TOL = 2.0
+FIRST_TRAIN_YEAR, FIRST_FORECAST_YEAR, LAST_FORECAST_YEAR = 1948, 1965, 2021
+
+
+def expanding_window_ols_r2oos(panel, target, predictors):
+    """Out-of-sample R2 (percent) of expanding-window OLS vs. the prevailing mean.
+
+    Appendix B.3: to forecast year t (1965..2021), fit y_s on x_{s-1} for
+    1948 <= s <= t-1, with predictors standardized on the training window and an
+    intercept. The benchmark is the training-window mean of y. lstsq gives the
+    minimum-norm fit, which handles the exact collinearity of d/e and tms.
+    """
+    data = pd.concat([panel[predictors].shift(1), panel[target].rename("y")], axis=1)
+    data.index = data.index.year
+    data = data.loc[FIRST_TRAIN_YEAR:LAST_FORECAST_YEAR]
+    sse_model = sse_bench = 0.0
+    for year in range(FIRST_FORECAST_YEAR, LAST_FORECAST_YEAR + 1):
+        train = data.loc[FIRST_TRAIN_YEAR : year - 1]
+        mean, std = train[predictors].mean(), train[predictors].std()
+        x_train = (train[predictors] - mean) / std
+        x_test = (data.loc[year, predictors] - mean) / std
+        design = np.column_stack([np.ones(len(train)), x_train.to_numpy()])
+        beta = np.linalg.lstsq(design, train["y"].to_numpy(), rcond=None)[0]
+        forecast = beta[0] + x_test.to_numpy() @ beta[1:]
+        sse_model += (data.loc[year, "y"] - forecast) ** 2
+        sse_bench += (data.loc[year, "y"] - train["y"].mean()) ** 2
+    return 100 * (1 - sse_model / sse_bench)
+
+
+def _toy_annual_panel():
+    years = pd.date_range("1947-12-31", "2021-12-31", freq="YE")
+    rng = np.random.default_rng(0)
+    return pd.DataFrame({"x": rng.standard_normal(len(years))}, index=years)
+
+
+def test_r2oos_is_zero_when_the_forecast_is_the_benchmark():
+    """Intercept-only OLS forecasts the training mean, so R2oos = 0 (B.6(4))."""
+    panel = _toy_annual_panel()
+    panel["y"] = np.random.default_rng(1).standard_normal(len(panel))
+    assert expanding_window_ols_r2oos(panel, "y", []) == pytest.approx(0.0, abs=1e-10)
+
+
+def test_r2oos_is_100_when_last_years_predictor_determines_the_return():
+    """y_t = 2 x_{t-1} is forecast exactly, which pins the lag direction."""
+    panel = _toy_annual_panel()
+    panel["y"] = 2 * panel["x"].shift(1)
+    assert expanding_window_ols_r2oos(panel, "y", ["x"]) == pytest.approx(100.0)
+
+
+def test_target_reproduces_paper_ols_anchor_on_panel_g():
+    """TARGET on finance1_panel_G gives the paper's OLS R2oos (-81.08) within 2 points."""
+    path = bp.DATA_DIR / bp.finance1_file_name("G")
+    if not path.exists():
+        pytest.skip(f"{path.name} not found in DATA_DIR; run `doit` first.")
+    panel = bp.load_finance1_panel("G")
+    r2 = expanding_window_ols_r2oos(panel, bp.TARGET, bp.FINANCE1_PREDICTORS)
+    assert abs(r2 - PAPER_OLS_R2OOS) <= OLS_ANCHOR_TOL, (
+        f"OLS R2oos with TARGET={bp.TARGET!r} is {r2:.2f}, "
+        f"paper {PAPER_OLS_R2OOS} +/- {OLS_ANCHOR_TOL}"
+    )
+
+
+@pytest.mark.parametrize("panel", bp.PANELS)
+@pytest.mark.parametrize("freq", ["quarterly", "semiannual", "annual"])
+def test_k_month_target_is_the_sum_of_monthly_targets(panel, freq):
+    """The extension adds monthly log premia across k months; TARGET must agree."""
+    paths = [bp.DATA_DIR / bp.panel_file_name(panel, f) for f in ("monthly", freq)]
+    for path in paths:
+        if not path.exists():
+            pytest.skip(f"{path.name} not found in DATA_DIR; run `doit` first.")
+    monthly = bp.load_panel(panel, "monthly")[bp.TARGET]
+    k_month = bp.load_panel(panel, freq)[bp.TARGET]
+    k = bp.FREQUENCIES[freq]
+    # Calendar k-month periods end in months k, 2k, ..., 12.
+    end_month = ((monthly.index.month - 1) // k + 1) * k
+    period_end = pd.to_datetime(
+        pd.DataFrame({"year": monthly.index.year, "month": end_month, "day": 1})
+    ) + pd.offsets.MonthEnd(0)
+    summed = monthly.groupby(period_end.to_numpy()).sum()
+    summed.index = pd.DatetimeIndex(summed.index, name=k_month.index.name)
+    pd.testing.assert_series_equal(summed, k_month, check_names=False, atol=1e-10)
