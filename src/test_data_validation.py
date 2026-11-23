@@ -1,9 +1,17 @@
 """Pre-registered data-validation tests for the predictor panels (Appendix C.3).
 
-The tolerances at the top of this file were fixed BEFORE any comparison between
-our series and Goyal's was run. Do not loosen them after looking at results: a
-failure is a finding to report (Table C1), not a number to tune. If a tolerance
-must change, do it in its own commit and say why in the commit message.
+What was fixed in advance, and what was not:
+
+- The correlation thresholds (0.99 / 0.97 / 0.95) are the ones in Appendix C.3
+  (PDF dated 2026-11-13), set before any data was pulled. Cite the appendix
+  for this, not git: these commits were re-created when the branches were
+  stacked, so their timestamps do not show the order of work.
+- The known discrepancies (Goyal's sheets disagreeing with each other, and his
+  2017-11 Index) were recorded AFTER looking at the data, and are labelled so.
+
+Do not loosen a tolerance after looking at results: a failure is a finding to
+report (Table C1), not a number to tune. If a tolerance must change, do it in
+its own commit and say why in the commit message.
 
 The checks follow Appendix C.3:
 
@@ -262,6 +270,36 @@ def test_crsp_total_return_matches_shiller_implied_return():
     assert both["crsp"].corr(both["shiller"]) >= SHILLER_CROSSCHECK_CORR_MIN
     mean_gap = (both["crsp"] - both["shiller"]).mean()
     assert abs(mean_gap) <= SHILLER_CROSSCHECK_MAX_ABS_MEAN_GAP
+
+
+###############################################################################
+## Added after the freeze (2026-11-23): Goyal's Index vs. CRSP's S&P 500 level.
+## The data review found one month where Goyal's posted Index is wrong while his
+## own CRSP returns agree with CRSP. The correlation checks above cannot see a
+## single bad month, so the known error is recorded here, and any new mismatch,
+## or this one disappearing in a new vintage, fails the test. The tolerance was
+## set after seeing the data (every other month is within 3.1e-5).
+GOYAL_INDEX_VS_CRSP_RTOL = 1e-4
+KNOWN_GOYAL_INDEX_ERRORS = {
+    # Goyal 2584.84 vs. CRSP 2647.58 (-2.37%); moves Panel G's d/p and e/p in
+    # 2017-11 and d/y in 2017-11 and 2017-12.
+    pd.Timestamp("2017-11-30"),
+}
+
+
+def test_goyal_index_matches_crsp_level_except_known_errors():
+    """Goyal's monthly Index equals CRSP's S&P 500 level, except the recorded error."""
+    goyal = _read_parquet_or_skip("goyal_monthly.parquet")
+    crsp = _read_parquet_or_skip("crsp_sp500_monthly.parquet")
+    both = pd.concat([goyal["Index"], crsp["spindx"]], axis=1, keys=["G", "C"])
+    both = both.loc[START_DATE:END_DATE].dropna()
+    assert len(both) > 0, "No overlapping months"
+    gap = (both["G"] / both["C"] - 1).abs()
+    mismatched = set(gap.index[gap > GOYAL_INDEX_VS_CRSP_RTOL])
+    assert mismatched == KNOWN_GOYAL_INDEX_ERRORS, (
+        f"new: {sorted(d.date() for d in mismatched - KNOWN_GOYAL_INDEX_ERRORS)}, "
+        f"gone: {sorted(d.date() for d in KNOWN_GOYAL_INDEX_ERRORS - mismatched)}"
+    )
 
 
 ###############################################################################
