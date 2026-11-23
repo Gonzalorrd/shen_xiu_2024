@@ -1,9 +1,17 @@
 """Pre-registered data-validation tests for the predictor panels (Appendix C.3).
 
-The tolerances at the top of this file were fixed BEFORE any comparison between
-our series and Goyal's was run. Do not loosen them after looking at results: a
-failure is a finding to report (Table C1), not a number to tune. If a tolerance
-must change, do it in its own commit and say why in the commit message.
+What was fixed in advance, and what was not:
+
+- The correlation thresholds (0.99 / 0.97 / 0.95) are the ones in Appendix C.3
+  (PDF dated 2026-11-13), set before any data was pulled. Cite the appendix
+  for this, not git: these commits were re-created when the branches were
+  stacked, so their timestamps do not show the order of work.
+- The known discrepancies (Goyal's sheets disagreeing with each other, and his
+  2017-11 Index) were recorded AFTER looking at the data, and are labelled so.
+
+Do not loosen a tolerance after looking at results: a failure is a finding to
+report (Table C1), not a number to tune. If a tolerance must change, do it in
+its own commit and say why in the commit message.
 
 The checks follow Appendix C.3:
 
@@ -63,21 +71,12 @@ RECONCILIATION_CORR_MIN = {
     "ltr": CORR_MIN_PROXY,
     "tms": CORR_MIN_PROXY,
 }
-# ik exists only at quarterly/annual frequency; checked at annual frequency.
+# ik exists only at quarterly/annual frequency; checked on the Finance 1 panel.
 RECONCILIATION_CORR_MIN_ANNUAL_ONLY = {"ik": CORR_MIN_PROXY}
 
 # Taken from Goyal in both panels, so they must be identical, not merely close.
 GOYAL_SOURCED_MONTHLY = ["b/m", "dfr"]
-# ik was ADDED HERE ON 2026-11-21, AFTER its proxy failed the 0.95 threshold
-# above (corr 0.927). Welch and Goyal (2008): "John Cochrane kindly provided us
-# with updated data"; the capital construction is not documented. The threshold
-# was not changed, and the failing proxy test below is kept as a strict xfail.
-GOYAL_SOURCED_ANNUAL = ["b/m", "eqis", "dfr", "ik"]
-IK_PROXY_FAILURE = (
-    "Post-hoc (2026-11-21): the BEA-based ik proxy correlates 0.927 with Goyal's "
-    "ik (< 0.95), whose source is data supplied by John Cochrane; Panel R uses "
-    "Goyal's ik instead. Reported in Table C1."
-)
+GOYAL_SOURCED_ANNUAL = ["b/m", "eqis", "dfr"]
 
 ## 2. Identities hold to floating-point precision.
 IDENTITY_ATOL = 1e-10
@@ -157,35 +156,41 @@ def test_rebuilt_series_reconcile_with_goyal_monthly(series, corr_min):
     assert corr >= corr_min, f"{series}: corr {corr:.4f} < {corr_min}"
 
 
+# Known failure, found at the first reconciliation (2026-11-21) and kept as a
+# finding (Table C1), as the module docstring requires: the threshold is
+# unchanged and Panel R keeps the proxy, as Appendix C.2 plans. raises= makes
+# sure only the failed threshold counts, not a crash in building the proxy.
+IK_PROXY_FAILURE = (
+    "Known finding: the BEA-based ik proxy correlates 0.927 with Goyal's ik, "
+    "below the pre-registered 0.95. Reported as FAIL in Table C1."
+)
+
+
 @pytest.mark.parametrize(
     "series,corr_min",
     [
         pytest.param(
             "ik",
             RECONCILIATION_CORR_MIN_ANNUAL_ONLY["ik"],
-            marks=pytest.mark.xfail(strict=True, reason=IK_PROXY_FAILURE),
+            marks=pytest.mark.xfail(
+                strict=True, raises=AssertionError, reason=IK_PROXY_FAILURE
+            ),
         )
     ],
 )
 def test_rebuilt_series_reconcile_with_goyal_annual(series, corr_min):
-    """The annual-only proxy (ik, from BEA data) reconciles with Goyal's annual ik.
-
-    Panel R now carries Goyal's ik, so the proxy is rebuilt here from the FRED
-    pulls rather than read from the panel.
-    """
-    rebuild_inputs = pytest.importorskip("rebuild_inputs")
+    """Series that exist only at annual frequency reconcile on the Finance 1 panel."""
     panel_g = _read_parquet_or_skip("finance1_panel_G.parquet")
-    _read_parquet_or_skip("fred_quarterly.parquet")
-    _read_parquet_or_skip("fred_annual.parquet")
-    proxy = rebuild_inputs.build_rebuilt_annual_ik(DATA_DIR)
-    both = pd.concat([proxy, panel_g[series]], axis=1, keys=["R", "G"]).dropna()
+    panel_r = _read_parquet_or_skip("finance1_panel_R.parquet")
+    both = pd.concat([panel_r[series], panel_g[series]], axis=1, keys=["R", "G"])
+    both = both.dropna()
     assert len(both) > 0, f"No overlapping observations for {series}"
     corr = both["R"].corr(both["G"])
     assert corr >= corr_min, f"{series}: corr {corr:.4f} < {corr_min}"
 
 
 def test_goyal_sourced_series_identical_in_both_panels():
-    """b/m, eqis, dfr and ik come from Goyal in Panel R too, so they match exactly."""
+    """b/m, eqis and dfr come from Goyal in Panel R too, so they match exactly."""
     monthly_g = _read_parquet_or_skip("panel_G_monthly.parquet")
     monthly_r = _read_parquet_or_skip("panel_R_monthly.parquet")
     pd.testing.assert_frame_equal(
@@ -265,6 +270,36 @@ def test_crsp_total_return_matches_shiller_implied_return():
     assert both["crsp"].corr(both["shiller"]) >= SHILLER_CROSSCHECK_CORR_MIN
     mean_gap = (both["crsp"] - both["shiller"]).mean()
     assert abs(mean_gap) <= SHILLER_CROSSCHECK_MAX_ABS_MEAN_GAP
+
+
+###############################################################################
+## Added after the freeze (2026-11-23): Goyal's Index vs. CRSP's S&P 500 level.
+## The data review found one month where Goyal's posted Index is wrong while his
+## own CRSP returns agree with CRSP. The correlation checks above cannot see a
+## single bad month, so the known error is recorded here, and any new mismatch,
+## or this one disappearing in a new vintage, fails the test. The tolerance was
+## set after seeing the data (every other month is within 3.1e-5).
+GOYAL_INDEX_VS_CRSP_RTOL = 1e-4
+KNOWN_GOYAL_INDEX_ERRORS = {
+    # Goyal 2584.84 vs. CRSP 2647.58 (-2.37%); moves Panel G's d/p and e/p in
+    # 2017-11 and d/y in 2017-11 and 2017-12.
+    pd.Timestamp("2017-11-30"),
+}
+
+
+def test_goyal_index_matches_crsp_level_except_known_errors():
+    """Goyal's monthly Index equals CRSP's S&P 500 level, except the recorded error."""
+    goyal = _read_parquet_or_skip("goyal_monthly.parquet")
+    crsp = _read_parquet_or_skip("crsp_sp500_monthly.parquet")
+    both = pd.concat([goyal["Index"], crsp["spindx"]], axis=1, keys=["G", "C"])
+    both = both.loc[START_DATE:END_DATE].dropna()
+    assert len(both) > 0, "No overlapping months"
+    gap = (both["G"] / both["C"] - 1).abs()
+    mismatched = set(gap.index[gap > GOYAL_INDEX_VS_CRSP_RTOL])
+    assert mismatched == KNOWN_GOYAL_INDEX_ERRORS, (
+        f"new: {sorted(d.date() for d in mismatched - KNOWN_GOYAL_INDEX_ERRORS)}, "
+        f"gone: {sorted(d.date() for d in KNOWN_GOYAL_INDEX_ERRORS - mismatched)}"
+    )
 
 
 ###############################################################################
