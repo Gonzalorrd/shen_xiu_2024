@@ -254,3 +254,24 @@ def test_target_reproduces_paper_ols_anchor_on_panel_g():
         f"OLS R2oos with TARGET={bp.TARGET!r} is {r2:.2f}, "
         f"paper {PAPER_OLS_R2OOS} +/- {OLS_ANCHOR_TOL}"
     )
+
+
+@pytest.mark.parametrize("panel", bp.PANELS)
+@pytest.mark.parametrize("freq", ["quarterly", "semiannual", "annual"])
+def test_k_month_target_is_the_sum_of_monthly_targets(panel, freq):
+    """The extension adds monthly log premia across k months; TARGET must agree."""
+    paths = [bp.DATA_DIR / bp.panel_file_name(panel, f) for f in ("monthly", freq)]
+    for path in paths:
+        if not path.exists():
+            pytest.skip(f"{path.name} not found in DATA_DIR; run `doit` first.")
+    monthly = bp.load_panel(panel, "monthly")[bp.TARGET]
+    k_month = bp.load_panel(panel, freq)[bp.TARGET]
+    k = bp.FREQUENCIES[freq]
+    # Calendar k-month periods end in months k, 2k, ..., 12.
+    end_month = ((monthly.index.month - 1) // k + 1) * k
+    period_end = pd.to_datetime(
+        pd.DataFrame({"year": monthly.index.year, "month": end_month, "day": 1})
+    ) + pd.offsets.MonthEnd(0)
+    summed = monthly.groupby(period_end.to_numpy()).sum()
+    summed.index = pd.DatetimeIndex(summed.index, name=k_month.index.name)
+    pd.testing.assert_series_equal(summed, k_month, check_names=False, atol=1e-10)
